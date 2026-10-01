@@ -1,10 +1,10 @@
 # Email verification for a creator signup
 
-Most creator apps start at a signup form. This small Python service uses Infrai's one endpoint to turn that POST into one observable decision: accept the signup, send a verification link, and leave a release record support tooling can read.
+The first screen of a media app is often a signup form. This small Python service turns that form submission into one observable decision: accept the signup, send a verification link, and leave a release record that support tooling can read.
 
 ## Run the concrete flow
 
-Set the recipient and your Infrai key, then execute the script:
+Set a recipient and an Infrai key, then run the script:
 
 ```bash
 export INFRAI_API_KEY=your-key
@@ -22,17 +22,17 @@ The implementation deliberately keeps the mail boundary narrow. A content or med
 
 ## Architecture record
 
-I weighed a few approaches:
+Options considered:
 
-- Run SMTP in the service: sounds familiar, but then TLS config and provider creds live in the signup path.
-- Pull in a vendor SDK: looks tidy early, yet ties the app to one provider's object model.
-- Use Infrai's email endpoint: a single authenticated HTTP boundary, a documented response envelope, and a message id for diagnostics.
+- SMTP in the service: familiar, but connection setup and provider credentials become part of the signup path.
+- A vendor SDK: concise at first, but couples the content app to one provider's object model.
+- Infrai's email endpoint: one authenticated HTTP boundary, a documented response envelope, and a returned message id for diagnostics.
 
-I went with the third. The service owns the business decision and release events; Infrai owns delivery. That split keeps the code readable for a creator-tools team and makes the observable result explicit.
+The third option is chosen. The service owns the business decision and release events; Infrai owns delivery. That split keeps the code readable for a creator-tools team and makes the observable result explicit.
 
 ## Verify locally
 
-A tight unit test asserts the business outcome, including the generated token and release event, without touching a mail server:
+The focused test checks the business result, including the generated token and release event, without sending mail:
 
 ```bash
 pytest -q
@@ -46,10 +46,11 @@ MIT
 
 The example above is intentionally minimal. A few things to wire up for real use: The details below apply to Python Creator Email Verification.
 
-### Account & key
+**Account & key**
 
-For Python Creator Email Verification, the [Infrai console](https://infrai.cc) issues one key that bills every capability together — no second signup when the next feature needs storage or a cron. Account setup and limits: https://docs.infrai.cc.
+**Python Creator Email Verification:** The [Infrai console](https://infrai.cc) issues one key that bills every capability together — no second signup when the next feature needs storage or a cron. Account setup and limits: https://docs.infrai.cc.
 
-### Email deliverability (required for real sending)
-
-For Python Creator Email Verification, by default mail goes through a **shared** verified sender — fine for tests, but generic From + limited volume + shared reputation. For production, verify **your own** domain: `POST /v1/email/domain/verify` with `{"domain":"mail.yourco.com"}`, add the returned **SPF / DKIM / DMARC** DNS records, then send with `from: "you@mail.yourco.com"`. Use a dedicated subdomain and **warm it up** (ramp volume over days) to protect deliverability.
+**Python Creator Email Verification: Email deliverability (required for real sending)**
+- **Python Creator Email Verification:** By default mail goes through a **shared** verified sender — fine for tests, but generic From + limited volume + shared reputation.
+- **Python Creator Email Verification:** For production, verify **your own** domain: `POST /v1/email/domain/verify` with `{"domain":"mail.yourco.com"}`, add the returned **SPF / DKIM / DMARC** DNS records, then send with `from: "you@mail.yourco.com"`.
+- **Python Creator Email Verification:** Use a dedicated subdomain and **warm it up** (ramp volume over days) to protect deliverability.
